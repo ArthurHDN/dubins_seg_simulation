@@ -1,0 +1,3 @@
+[submodule "pydubinsseg"]
+	path = pydubinsseg
+	url = git@github.com:ArthurHDN/pydubinsseg.git
