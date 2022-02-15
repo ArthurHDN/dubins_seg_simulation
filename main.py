@@ -48,7 +48,7 @@ class Simulator():
         logger.info('Succesfully created simulator object ' + str(self))
         logger.info(f'Simulation parameters: N robots = {self._n_robots}, M groups = {self._m_groups}, params = {params}')
 
-    def run(self, dt = 0.1, t_start = 0.0, t_stop = 100.0):
+    def run(self, dt = 0.1, t_start = 0.0, t_stop = 100.0, t_thres = 0.0):
         logger.info('Running simulator')
         self._time_array = np.linspace(t_start, t_stop, int((t_stop - t_start) / dt + 1))
         self._segragation_indexes = []
@@ -56,19 +56,21 @@ class Simulator():
         # with alive_bar(1000) as bar:
         #     for i in self._run_loop(dt=dt):
         #         bar()
-        for i in tqdm(self._run_loop(dt=dt)):
+        for i in tqdm(self._run_loop(dt=dt, t_thres=t_thres)):
             pass
         logger.info('Simulation finished')
 
-    def _run_loop(self, dt = 0.1):
+    def _run_loop(self, dt = 0.1, t_thres = 0.0):
         for t in self._time_array:
             # All send/recieve memory info
-            self._communicate_robots()
+            if t >= t_thres:
+                self._communicate_robots()
             self._segragation_indexes.append(self._compute_segregation_index())
             # For each robot
             for i in range(len(self._dubins_control)):
                 robot = self._dubins_control[i]
                 robot.update_memory_about_itself()
+                robot.set_time(t)
                 robot_state = robot.get_state()
                 robot_pose = np.array(robot.get_pose2D())
                 # Store states
@@ -82,6 +84,8 @@ class Simulator():
                 elif robot_state == state['transition']:
                     robot.check_arrival()
                 [v,w] = robot.calculate_input_signals()
+                # Debug
+                # print(f'Robot {i} lap = {robot._SegregationControl__lap}')
                 # Integrate control signals
                 dx = dt*v*cos(robot_pose[2])
                 dy = dt*v*sin(robot_pose[2])
@@ -202,16 +206,16 @@ if __name__ == '__main__':
         'c': 36.0,
         'ref_vel': 1.0
     }
-    groups = [0,0,0]
+    groups = [0,0,0,0,0,]
     initial_poses = [
-        [10.0, 0.0, -pi/2],
-        # [0.0, 20.0, -pi],
-        # [-20.0, 0.0, -pi/2],
-        # [20.0, 0.0, pi/2],
+        # [10.0, 0.0, -pi/2],
+        [0.0, 20.0, -pi],
+        [-20.0, 0.0, -pi/2],
         [20.0, 0.0, pi/2],
-        [-30.0, 0.0, pi/2]
+        [-30.0, 0.0, pi/2],
+        [-40.0, 0.0, -pi/2],
     ]
     sim = Simulator(groups, params, initial_poses)
-    sim.run(dt = 0.1, t_start = 0.0, t_stop = 60.0)
+    sim.run(dt = 0.1, t_start = 0.0, t_stop = 600.0, t_thres = 30.0)
     sim.plot_results()
-    # sim.animate()
+    sim.animate()
