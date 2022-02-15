@@ -3,12 +3,10 @@ from math import cos, sin, pi
 import numpy as np
 import matplotlib.animation as ani
 import matplotlib.pyplot as plt
-# from mpl_toolkits.mplot3d import axes3d
-# from PIL import Image
+
 import logging
 import logging.handlers
 from tqdm import tqdm
-# from alive_progress import alive_bar
 
 from pydubinsseg import state
 from pydubinsseg.segregationcontrol import SegregationControl
@@ -53,18 +51,15 @@ class Simulator():
         self._time_array = np.linspace(t_start, t_stop, int((t_stop - t_start) / dt + 1))
         self._segragation_indexes = []
         self._random_colors = np.random.randint(0, 255, [self._m_groups+1, 3])
-        # with alive_bar(1000) as bar:
-        #     for i in self._run_loop(dt=dt):
-        #         bar()
-        for i in tqdm(self._run_loop(dt=dt, t_thres=t_thres)):
-            pass
+        self._run_loop(dt=dt, t_thres=t_thres)
         logger.info('Simulation finished')
 
     def _run_loop(self, dt = 0.1, t_thres = 0.0):
-        for t in self._time_array:
+        for t in tqdm(self._time_array):
             # All send/recieve memory info
             if t >= t_thres:
                 self._communicate_robots()
+            # Segregation index
             self._segragation_indexes.append(self._compute_segregation_index())
             # For each robot
             for i in range(len(self._dubins_control)):
@@ -84,15 +79,12 @@ class Simulator():
                 elif robot_state == state['transition']:
                     robot.check_arrival()
                 [v,w] = robot.calculate_input_signals()
-                # Debug
-                # print(f'Robot {i} lap = {robot._SegregationControl__lap}')
                 # Integrate control signals
                 dx = dt*v*cos(robot_pose[2])
                 dy = dt*v*sin(robot_pose[2])
                 dtheta = dt*w
                 robot_pose = robot_pose + np.array([dx,dy,dtheta])
                 robot.set_pose2D(robot_pose)
-            yield
 
     def _communicate_robots(self):
         for i in range(self._n_robots):
@@ -132,7 +124,7 @@ class Simulator():
                     index = index + 1.0
         return 1 - (index/(self._n_robots*self._m_groups))
 
-    def animate(self, interval = 50, fps = 30):
+    def animate(self, interval = 20, fps = 30):
         logger.info('Creating animation')
         if os.path.isfile(self._ANIMATION_OUTPUT_FILE):
             os.remove(self._ANIMATION_OUTPUT_FILE)
@@ -156,10 +148,10 @@ class Simulator():
         plt.xlabel('x'); plt.ylabel('y')
         plt.gca().set_aspect('equal', adjustable='box')
         plt.grid(True)
-        anim = ani.FuncAnimation(fig, self._animate_loop, frames = len(self._time_array), interval = interval, blit = False)
         plt.tight_layout()
-        # plt.show()
         logger.info('Exporting animation file')
+        anim = ani.FuncAnimation(fig, self._animate_loop, frames = tqdm(range(0,len(self._time_array),interval), initial=1, position=0), blit = False)
+        # plt.show()
         anim.save(self._ANIMATION_OUTPUT_FILE, fps = fps, writer = 'ffmpeg')
         logger.info('Exported animation file to ' + str(self._ANIMATION_OUTPUT_FILE))
      
@@ -194,8 +186,8 @@ class Simulator():
             plt.grid(True)
             plt.gca().set_aspect('equal', adjustable='box')
         # plt.show(block=False)
-        # plt.show()
         plt.savefig('trajectory.jpg')
+        # plt.show()
         logger.info('Saved file trajectory.jpg')
 
 
@@ -206,16 +198,13 @@ if __name__ == '__main__':
         'c': 36.0,
         'ref_vel': 1.0
     }
-    groups = [0,0,0,0,0,]
+    groups = [0,0,]
     initial_poses = [
         # [10.0, 0.0, -pi/2],
         [0.0, 20.0, -pi],
-        [-20.0, 0.0, -pi/2],
-        [20.0, 0.0, pi/2],
-        [-30.0, 0.0, pi/2],
         [-40.0, 0.0, -pi/2],
     ]
     sim = Simulator(groups, params, initial_poses)
-    sim.run(dt = 0.1, t_start = 0.0, t_stop = 600.0, t_thres = 30.0)
+    sim.run(dt = 0.1, t_start = 0.0, t_stop = 150.0, t_thres = 30.0)
     sim.plot_results()
     sim.animate()
