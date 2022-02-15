@@ -1,7 +1,4 @@
 import os
-import time
-import shutil
-import cv2
 from math import cos, sin, pi
 import numpy as np
 import matplotlib.animation as ani
