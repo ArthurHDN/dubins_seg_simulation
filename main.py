@@ -45,8 +45,8 @@ class Simulator():
         self._n_robots = number
         self._m_groups = max(groups)+1
         self._params = params
-        logger.info(f'Simulation parameters: N robots = {self._n_robots}, M groups = {self._m_groups}, params = {params}')
         logger.info('Succesfully created simulator object ' + str(self))
+        logger.info(f'Simulation parameters: N robots = {self._n_robots}, M groups = {self._m_groups}, params = {params}')
 
     def run(self, dt = 0.1, t_start = 0.0, t_stop = 100.0):
         logger.info('Running simulator')
@@ -63,7 +63,7 @@ class Simulator():
     def _run_loop(self, dt = 0.1):
         for t in self._time_array:
             # All send/recieve memory info
-            # self._communicate_robots()
+            self._communicate_robots()
             self._segragation_indexes.append(self._compute_segregation_index())
             # For each robot
             for i in range(len(self._dubins_control)):
