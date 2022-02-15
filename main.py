@@ -42,16 +42,17 @@ class Simulator():
             robot.calculate_initial_conditions()
             self._dubins_control.append(robot)
             number = number + 1
-        self._n_robots = number - 1
-        self._n_groups = max(groups)
+        self._n_robots = number
+        self._m_groups = max(groups)+1
         self._params = params
+        logger.info(f'Simulation parameters: N robots = {self._n_robots}, M groups = {self._m_groups}, params = {params}')
         logger.info('Succesfully created simulator object ' + str(self))
 
     def run(self, dt = 0.1, t_start = 0.0, t_stop = 100.0):
         logger.info('Running simulator')
         self._time_array = np.linspace(t_start, t_stop, int((t_stop - t_start) / dt + 1))
         self._segragation_indexes = []
-        self._random_colors = np.random.randint(0, 255, [self._n_groups+1, 3])
+        self._random_colors = np.random.randint(0, 255, [self._m_groups+1, 3])
         # with alive_bar(1000) as bar:
         #     for i in self._run_loop(dt=dt):
         #         bar()
@@ -62,7 +63,7 @@ class Simulator():
     def _run_loop(self, dt = 0.1):
         for t in self._time_array:
             # All send/recieve memory info
-            self._communicate_robots()
+            # self._communicate_robots()
             self._segragation_indexes.append(self._compute_segregation_index())
             # For each robot
             for i in range(len(self._dubins_control)):
@@ -76,7 +77,7 @@ class Simulator():
                 if robot_state == state['in circle']:
                     robot.calculate_lap()
                     robot.calculate_wills()
-                    # robot.prevent_collision()
+                    robot.prevent_collision()
                     robot.evaluate_wills()
                 elif robot_state == state['transition']:
                     robot.check_arrival()
@@ -125,7 +126,7 @@ class Simulator():
                     continue
                 if i_curve >= zone['inner'] and i_curve <= zone['outer']:
                     index = index + 1.0
-        return 1 - (index/(self._n_robots*self._n_groups))
+        return 1 - (index/(self._n_robots*self._m_groups))
 
     def animate(self, interval = 50, fps = 30):
         logger.info('Creating animation')
@@ -201,15 +202,16 @@ if __name__ == '__main__':
         'c': 36.0,
         'ref_vel': 1.0
     }
-    groups = [0,0,0,1,1]
+    groups = [0,0,0]
     initial_poses = [
         [10.0, 0.0, -pi/2],
-        [0.0, 20.0, -pi],
-        [-20.0, 0.0, -pi/2],
+        # [0.0, 20.0, -pi],
+        # [-20.0, 0.0, -pi/2],
+        # [20.0, 0.0, pi/2],
         [20.0, 0.0, pi/2],
-        [40.0, 0.0, pi/2]
+        [-30.0, 0.0, pi/2]
     ]
     sim = Simulator(groups, params, initial_poses)
-    sim.run(dt = 0.1, t_start = 0.0, t_stop = 300.0)
+    sim.run(dt = 0.1, t_start = 0.0, t_stop = 60.0)
     sim.plot_results()
-    sim.animate()
+    # sim.animate()
