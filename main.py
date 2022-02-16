@@ -79,6 +79,8 @@ class Simulator():
                 elif robot_state == state['transition']:
                     robot.check_arrival()
                 [v,w] = robot.calculate_input_signals()
+                # Debug
+                # print
                 # Integrate control signals
                 dx = dt*v*cos(robot_pose[2])
                 dy = dt*v*sin(robot_pose[2])
@@ -129,8 +131,9 @@ class Simulator():
         if os.path.isfile(self._ANIMATION_OUTPUT_FILE):
             os.remove(self._ANIMATION_OUTPUT_FILE)
         # Animation loop
-        fig = plt.figure(figsize=(20, 20))
-        ax = plt.axes(xlim=(-40, 40), ylim=(-40, 40))
+        fig = plt.figure()
+        # ax = plt.axes(xlim=(-40, 40), ylim=(-40, 40))
+        ax = plt.axes()
         self._robots_plot = []
         n = 0
         for robot_id in range(len(self._states_array)):
@@ -162,6 +165,8 @@ class Simulator():
             traj_x = [pose[0] for pose in self._states_array[robot_id][0:n]]; traj_y = [pose[1] for pose in self._states_array[robot_id][0:n]]; traj_theta = [pose[2] for pose in self._states_array[robot_id][0:n]]
             self._robots_plot[robot_id]['position'].set_data(x,y)
             self._robots_plot[robot_id]['trajectory'].set_data(traj_x,traj_y)
+            plt.gca().relim()
+            plt.gca().autoscale_view()
         
     def plot_results(self):
         logger.info('Plotting results')
@@ -198,13 +203,19 @@ if __name__ == '__main__':
         'c': 36.0,
         'ref_vel': 1.0
     }
-    groups = [0,0,]
+    groups = [0,2,0,1,1,1,2,3]
     initial_poses = [
         # [10.0, 0.0, -pi/2],
         [0.0, 20.0, -pi],
+        [0.0, -20.0, 0.0],
+        [40.0, 0.0, pi/2],
         [-40.0, 0.0, -pi/2],
+        [10.0, 0.0, -pi/2],
+        [0.0, 40.0, -pi],
+        [0.0, 50.0, 0.0],
+        [0.0, 70.0, 0.0],
     ]
     sim = Simulator(groups, params, initial_poses)
-    sim.run(dt = 0.1, t_start = 0.0, t_stop = 150.0, t_thres = 30.0)
+    sim.run(dt = 0.1, t_start = 0.0, t_stop = 1200.0, t_thres = 30.0)
     sim.plot_results()
     sim.animate()
